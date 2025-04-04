@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Notifications Kafka</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+</head>
+<body>
+    <h1>Envoi de notifications Kafka</h1>
+    <form action="/send" method="post">
+        <label for="topic">Choisir le topic :</label>
+        <select name="topic" id="topic">
+            <option value="order_notifications" th:selected="${selectedTopic == 'order_notifications'}">order_notifications</option>
+            <option value="order_updates" th:selected="${selectedTopic == 'order_updates'}">order_updates</option>
+        </select>
+        <br/><br/>
+        <input type="text" name="message" placeholder="Tapez votre notification" required/>
+        <button type="submit">Envoyer</button>
+    </form>
+    <hr/>
+    <h2 th:text="${titre}">Liste des messages consommés</h2>
+    <ul id="messageList">
+        <li th:each="msg : ${messages}" th:text="${msg}"></li>
+    </ul>
+
+    <script type="text/javascript">
+        var stompClient = null;
+        function connect() {
+            var socket = new SockJS('/ws');
+            stompClient = Stomp.over(socket);
+            stompClient.connect({}, function (frame) {
+                console.log('Connecté: ' + frame);
+                stompClient.subscribe('/topic/consumedMessages', function (messageOutput) {
+                    addMessage(messageOutput.body);
+                });
+            });
+        }
+        function addMessage(message) {
+            var list = document.getElementById("messageList");
+            var li = document.createElement("li");
+            li.appendChild(document.createTextNode(message));
+            list.appendChild(li);
+        }
+        window.onload = function() {
+            connect();
+        };
+    </script>
+</body>
+</html>
